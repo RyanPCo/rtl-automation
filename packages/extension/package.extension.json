@@ -1,0 +1,74 @@
+{
+  "name": "rtl-automation",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onCommand:rtlautomation.openWaveformView",
+    "onCommand:rtlautomation.startMcpServer",
+    "onCommand:rtlautomation.showServerStatus",
+    "onView:rtlAutomation.waveformView"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "rtlautomation.openWaveformView",
+        "title": "RTL Automation: Open Waveform View"
+      },
+      {
+        "command": "rtlautomation.startMcpServer",
+        "title": "RTL Automation: Start MCP Server"
+      },
+      {
+        "command": "rtlautomation.showServerStatus",
+        "title": "RTL Automation: Show Server Status"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "rtlAutomation",
+          "title": "RTL Automation",
+          "icon": "media/activitybar.svg"
+        }
+      ]
+    },
+    "views": {
+      "rtlAutomation": [
+        {
+          "type": "webview",
+          "id": "rtlAutomation.waveformView",
+          "name": "Waveform Debug"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "RTL Automation",
+      "properties": {
+        "rtlAutomation.server.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the RTL Automation MCP server on activation."
+        },
+        "rtlAutomation.server.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": ["debug", "info", "warn", "error"],
+          "description": "Default log level for the RTL Automation MCP server."
+        },
+        "rtlAutomation.waveform.defaultBackend": {
+          "type": "string",
+          "default": "stub",
+          "description": "Preferred waveform backend identifier for future sessions."
+        }
+      }
+    }
+  }
+}
+

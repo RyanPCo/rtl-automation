@@ -1,0 +1,25 @@
+{
+  "name": "@rtl-automation/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "rtl-automation-mcp-server": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "watch": "node ./scripts/build.mjs --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src test scripts --ext .ts,.mjs",
+    "test": "npm run build && vitest run"
+  },
+  "dependencies": {
+    "@rtl-automation/shared": "^0.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.3"
+  }
+}

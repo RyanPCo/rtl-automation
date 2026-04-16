@@ -1,0 +1,99 @@
+{
+  "name": "rtl-automation",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/extension.js",
+  "types": "./dist/extension.d.ts",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "publisher": "local",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:rtlautomation.openWaveformView",
+    "onCommand:rtlautomation.startMcpServer",
+    "onCommand:rtlautomation.showServerStatus",
+    "onView:rtlAutomation.waveformView"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "rtlautomation.openWaveformView",
+        "title": "RTL Automation: Open Waveform View"
+      },
+      {
+        "command": "rtlautomation.startMcpServer",
+        "title": "RTL Automation: Start MCP Server"
+      },
+      {
+        "command": "rtlautomation.showServerStatus",
+        "title": "RTL Automation: Show Server Status"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "rtlAutomation",
+          "title": "RTL Automation",
+          "icon": "media/activitybar.svg"
+        }
+      ]
+    },
+    "views": {
+      "rtlAutomation": [
+        {
+          "type": "webview",
+          "id": "rtlAutomation.waveformView",
+          "name": "Waveform Debug"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "RTL Automation",
+      "properties": {
+        "rtlAutomation.server.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the RTL Automation MCP server on activation."
+        },
+        "rtlAutomation.server.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "description": "Default log level for the RTL Automation MCP server."
+        },
+        "rtlAutomation.waveform.defaultBackend": {
+          "type": "string",
+          "default": "stub",
+          "description": "Preferred waveform backend identifier for future sessions."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "watch": "node ./scripts/build.mjs --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src test scripts --ext .ts,.mjs",
+    "test": "vitest run",
+    "package:vsix": "npx @vscode/vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@rtl-automation/shared": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.99.0",
+    "@vscode/vsce": "^3.3.2",
+    "esbuild": "^0.25.3"
+  }
+}
