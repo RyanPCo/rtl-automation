@@ -1,0 +1,28 @@
+{
+  "name": "rtl-automation",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "npm run build --workspace @rtl-automation/shared && npm run build --workspace @rtl-automation/mcp-server && npm run build --workspace rtl-automation",
+    "watch": "npm run watch --workspace @rtl-automation/shared",
+    "clean": "npm run clean --workspace rtl-automation && npm run clean --workspace @rtl-automation/mcp-server && npm run clean --workspace @rtl-automation/shared",
+    "typecheck": "npm run typecheck --workspace @rtl-automation/shared && npm run typecheck --workspace @rtl-automation/mcp-server && npm run typecheck --workspace rtl-automation",
+    "lint": "npm run lint --workspace @rtl-automation/shared && npm run lint --workspace @rtl-automation/mcp-server && npm run lint --workspace rtl-automation",
+    "test": "npm run test --workspace @rtl-automation/shared && npm run test --workspace @rtl-automation/mcp-server && npm run test --workspace rtl-automation",
+    "package:vsix": "npm run package:vsix --workspace rtl-automation"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.1",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vitest": "^3.1.2"
+  }
+}
