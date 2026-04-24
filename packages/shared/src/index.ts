@@ -11,6 +11,7 @@ export const COMMAND_IDS = {
 export const CONFIG_KEYS = {
   autoStart: "rtlAutomation.server.autoStart",
   logLevel: "rtlAutomation.server.logLevel",
+  pythonCommand: "rtlAutomation.server.pythonCommand",
   defaultBackend: "rtlAutomation.waveform.defaultBackend"
 } as const;
 
@@ -19,6 +20,49 @@ export type ServerStatus = "stopped" | "starting" | "running" | "error";
 export interface ServerLaunchOptions {
   cwd?: string;
   logLevel?: string;
+  pythonCommand?: string;
+  extensionPath?: string;
+}
+
+export type WaveformToolName = "list_signals" | "find_nth_event" | "count_event_occurrences";
+
+export interface WaveformEventSpec {
+  type: string;
+  value?: string;
+}
+
+export interface WaveformToolBaseRequest {
+  waveformFile: string;
+  signals: string[];
+  events: WaveformEventSpec[];
+  afterTime?: number;
+}
+
+export interface ListSignalsRequest {
+  waveformFile: string;
+}
+
+export interface FindNthEventRequest extends WaveformToolBaseRequest {
+  n: number;
+}
+
+export type CountEventOccurrencesRequest = WaveformToolBaseRequest;
+
+export interface WaveformToolInfo {
+  name: WaveformToolName | string;
+  description?: string;
+}
+
+export interface WaveformToolResult {
+  tool: WaveformToolName;
+  result: Record<string, unknown>;
+}
+
+export interface WaveformDebugState {
+  selectedWaveformFile: string | null;
+  signalCount: number;
+  lastSignalLoadStatus: "idle" | "loading" | "loaded" | "error";
+  lastSignalLoadMessage?: string;
 }
 
 export interface WaveformSessionSummary {
@@ -28,13 +72,57 @@ export interface WaveformSessionSummary {
   status: "idle" | "active" | "error";
 }
 
-export interface ExtensionWebviewMessage {
-  type: "ready" | "start-server" | "show-status";
-  payload?: Record<string, unknown>;
-}
+export type ExtensionWebviewMessage =
+  | {
+      type: "ready" | "show-status" | "pick-waveform-file";
+    }
+  | {
+      type: "load-signal-options";
+      payload: ListSignalsRequest;
+    }
+  | {
+      type: "run-find-nth-event";
+      payload: FindNthEventRequest;
+    }
+  | {
+      type: "run-count-event-occurrences";
+      payload: CountEventOccurrencesRequest;
+    };
 
-export interface WebviewExtensionMessage {
-  type: "server-status" | "session-summary";
-  payload?: ServerStatus | WaveformSessionSummary;
-}
+export type WebviewExtensionMessage =
+  | {
+      type: "server-status";
+      payload: ServerStatus;
+    }
+  | {
+      type: "tool-list";
+      payload: WaveformToolInfo[];
+    }
+  | {
+      type: "tool-result";
+      payload: WaveformToolResult;
+    }
+  | {
+      type: "tool-error";
+      payload: {
+        tool: WaveformToolName;
+        message: string;
+      };
+    }
+  | {
+      type: "waveform-file-selected";
+      payload: string | null;
+    }
+  | {
+      type: "signal-options";
+      payload: string[];
+    }
+  | {
+      type: "debug-state";
+      payload: WaveformDebugState;
+    }
+  | {
+      type: "session-summary";
+      payload: WaveformSessionSummary;
+    };
 
