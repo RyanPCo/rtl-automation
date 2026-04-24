@@ -58,7 +58,17 @@ class VCDReader(WaveformReader):
         return changes
 
     def list_signals(self) -> list[str]:
-        return list(self._vcd.signals.keys())
+        references = getattr(self._vcd, "references_to_ids", None)
+        if isinstance(references, dict):
+            return sorted(references.keys())
+
+        signals = getattr(self._vcd, "signals", [])
+        if isinstance(signals, dict):
+            return sorted(signals.keys())
+        if isinstance(signals, list):
+            return sorted(str(signal) for signal in signals)
+
+        return []
 
 
 class FSTReader(WaveformReader):
@@ -93,7 +103,17 @@ class FSTReader(WaveformReader):
         return changes
 
     def list_signals(self) -> list[str]:
-        return list(self._vcd.signals.keys())
+        references = getattr(self._vcd, "references_to_ids", None)
+        if isinstance(references, dict):
+            return sorted(references.keys())
+
+        signals = getattr(self._vcd, "signals", [])
+        if isinstance(signals, dict):
+            return sorted(signals.keys())
+        if isinstance(signals, list):
+            return sorted(str(signal) for signal in signals)
+
+        return []
 
     def __del__(self):
         # Clean up temp file

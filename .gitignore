@@ -2,5 +2,22 @@ node_modules/
 dist/
 .DS_Store
 .vscode-test/
+.vscode/
 coverage/
+
+# Python cache/virtualenv
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Packaging/build artifacts
+*.vsix
+build/
+*.egg-info/
 

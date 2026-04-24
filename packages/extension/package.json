@@ -71,6 +71,11 @@
           ],
           "description": "Default log level for the RTL Automation MCP server."
         },
+        "rtlAutomation.server.pythonCommand": {
+          "type": "string",
+          "default": "python3",
+          "description": "Python executable used to launch the waveform_mcp server."
+        },
         "rtlAutomation.waveform.defaultBackend": {
           "type": "string",
           "default": "stub",
@@ -89,6 +94,7 @@
     "package:vsix": "npx @vscode/vsce package --no-dependencies"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@rtl-automation/shared": "^0.1.0"
   },
   "devDependencies": {

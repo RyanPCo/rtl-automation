@@ -15,11 +15,13 @@ export const registerCommands = (
     vscode.commands.registerCommand(COMMAND_IDS.startMcpServer, async () => {
       const status = await serverController.start();
       waveformView.postMessage({ type: "server-status", payload: status });
+      waveformView.postMessage({ type: "tool-list", payload: serverController.getTools() });
     }),
     vscode.commands.registerCommand(COMMAND_IDS.showServerStatus, async () => {
       const status = serverController.getStatus();
       await vscode.window.showInformationMessage(`RTL Automation MCP server: ${status}`);
       waveformView.postMessage({ type: "server-status", payload: status });
+      waveformView.postMessage({ type: "tool-list", payload: serverController.getTools() });
     })
   );
 };

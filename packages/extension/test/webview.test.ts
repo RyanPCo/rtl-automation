@@ -4,11 +4,16 @@ import { WaveformViewProvider } from "../src/webview.js";
 describe("WaveformViewProvider", () => {
   it("initializes HTML and responds to ready messages", () => {
     const postMessage = vi.fn();
-    let messageHandler: ((message: { type: string }) => void) | undefined;
+    let messageHandler: ((message: { type: string }) => Promise<void>) | undefined;
 
     const provider = new WaveformViewProvider(
       { fsPath: "/tmp/ext" } as never,
-      () => "running"
+      () => "running",
+      () => [{ name: "find_nth_event" }, { name: "list_signals" }],
+      async () => null,
+      async () => ["top.clk"],
+      async () => ({ time: 42 }),
+      async () => ({ count: 3 })
     );
 
     provider.resolveWebviewView({
@@ -17,7 +22,7 @@ describe("WaveformViewProvider", () => {
         html: "",
         options: {},
         postMessage,
-        onDidReceiveMessage(callback: (message: { type: string }) => void) {
+        onDidReceiveMessage(callback: (message: { type: string }) => Promise<void>) {
           messageHandler = callback;
           return { dispose() {} };
         }
@@ -25,10 +30,14 @@ describe("WaveformViewProvider", () => {
     } as never);
 
     expect(messageHandler).toBeTypeOf("function");
-    messageHandler?.({ type: "ready" });
+    void messageHandler?.({ type: "ready" });
     expect(postMessage).toHaveBeenCalledWith({
       type: "server-status",
       payload: "running"
+    });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: "tool-list",
+      payload: [{ name: "find_nth_event" }, { name: "list_signals" }]
     });
   });
 });

@@ -10,6 +10,27 @@ mcp = FastMCP("waveform-mcp")
 
 
 @mcp.tool()
+def list_signals(waveform_file: str) -> str:
+    """List all available signals in a waveform file.
+
+    Args:
+        waveform_file: Path to the waveform file (.vcd or .fst).
+
+    Returns:
+        JSON string with the result:
+        - On success: {"signals": [<str>, ...]}
+        - On error: {"error": "..."}
+    """
+    try:
+        reader = open_waveform(waveform_file)
+        return json.dumps({"signals": reader.list_signals()})
+    except FileNotFoundError:
+        return json.dumps({"error": f"Waveform file not found: {waveform_file}"})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
 def find_nth_event(
     waveform_file: str,
     signals: list[str],
