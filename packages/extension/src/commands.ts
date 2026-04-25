@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { COMMAND_IDS, SIDEBAR_VIEW_ID } from "@rtl-automation/shared";
+import { BlockDiagramPanel } from "./blockDiagramPanel.js";
 import type { ServerController } from "./serverController.js";
 import type { WaveformViewProvider } from "./webview.js";
 
@@ -22,7 +23,25 @@ export const registerCommands = (
       await vscode.window.showInformationMessage(`RTL Automation MCP server: ${status}`);
       waveformView.postMessage({ type: "server-status", payload: status });
       waveformView.postMessage({ type: "tool-list", payload: serverController.getTools() });
-    })
+    }),
+    vscode.commands.registerCommand(
+      COMMAND_IDS.openBlockDiagram,
+      async (uri?: vscode.Uri) => {
+        const filePath =
+          uri?.fsPath ?? vscode.window.activeTextEditor?.document.uri.fsPath;
+        if (!filePath || !/\.(v|sv)$/i.test(filePath)) {
+          await vscode.window.showErrorMessage(
+            "Open Block Diagram: select a .v or .sv file."
+          );
+          return;
+        }
+        BlockDiagramPanel.createOrShow(
+          context.extensionUri,
+          filePath,
+          (file) => serverController.parseVerilog({ verilogFile: file })
+        );
+      }
+    )
   );
 };
 

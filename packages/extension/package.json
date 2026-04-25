@@ -17,6 +17,7 @@
     "onCommand:rtlautomation.openWaveformView",
     "onCommand:rtlautomation.startMcpServer",
     "onCommand:rtlautomation.showServerStatus",
+    "onCommand:rtlautomation.openBlockDiagram",
     "onView:rtlAutomation.waveformView"
   ],
   "contributes": {
@@ -32,8 +33,28 @@
       {
         "command": "rtlautomation.showServerStatus",
         "title": "RTL Automation: Show Server Status"
+      },
+      {
+        "command": "rtlautomation.openBlockDiagram",
+        "title": "RTL Automation: Open Block Diagram"
       }
     ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "rtlautomation.openBlockDiagram",
+          "when": "resourceExtname == .v || resourceExtname == .sv",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "rtlautomation.openBlockDiagram",
+          "when": "resourceExtname == .v || resourceExtname == .sv",
+          "group": "navigation"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -95,9 +116,14 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@rtl-automation/shared": "^0.1.0"
+    "@rtl-automation/shared": "^0.1.0",
+    "@xyflow/react": "^12.10.2",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.99.0",
     "@vscode/vsce": "^3.3.2",
     "esbuild": "^0.25.3"

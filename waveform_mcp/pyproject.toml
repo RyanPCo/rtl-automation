@@ -7,7 +7,6 @@ requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.0.0",
     "vcdvcd>=2.5.0",
-    "wavedrom>=2.0.3",
 ]
 
 [project.optional-dependencies]
