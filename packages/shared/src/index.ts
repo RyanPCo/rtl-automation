@@ -24,7 +24,11 @@ export interface ServerLaunchOptions {
   extensionPath?: string;
 }
 
-export type WaveformToolName = "list_signals" | "find_nth_event" | "count_event_occurrences";
+export type WaveformToolName =
+  | "list_signals"
+  | "find_nth_event"
+  | "count_event_occurrences"
+  | "annotate_wavedrom_bug";
 
 export interface WaveformEventSpec {
   type: string;
@@ -47,6 +51,17 @@ export interface FindNthEventRequest extends WaveformToolBaseRequest {
 }
 
 export type CountEventOccurrencesRequest = WaveformToolBaseRequest;
+
+export interface AnnotateWavedromBugRequest {
+  waveformFile: string;
+  clockSignal: string;
+  cycleStart: number;
+  cycleEnd: number;
+  signals: string[];
+  diagnosis: string;
+  contextCycles?: number;
+  backgroundColor?: string;
+}
 
 export interface WaveformToolInfo {
   name: WaveformToolName | string;
@@ -125,4 +140,3 @@ export type WebviewExtensionMessage =
       type: "session-summary";
       payload: WaveformSessionSummary;
     };
-

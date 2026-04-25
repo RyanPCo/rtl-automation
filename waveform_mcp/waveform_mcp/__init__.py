@@ -1,5 +1,6 @@
 """Waveform MCP server for RTL debugging."""
 
+from .annotations import annotate_wavedrom_bug
 from .events import Event, EventType
 from .server import mcp
 from .waveform import (
@@ -14,6 +15,7 @@ from .waveform import (
 __all__ = [
     "Event",
     "EventType",
+    "annotate_wavedrom_bug",
     "FSTReader",
     "VCDReader",
     "WaveformReader",
