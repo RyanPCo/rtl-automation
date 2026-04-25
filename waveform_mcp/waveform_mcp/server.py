@@ -3,6 +3,7 @@
 import json
 from mcp.server.fastmcp import FastMCP
 
+from .annotations import annotate_wavedrom_bug as render_wavedrom_bug_annotation
 from .events import Event
 from .waveform import count_events, find_nth_event_time, open_waveform
 
@@ -123,6 +124,54 @@ def count_event_occurrences(
 
         return json.dumps({"count": result})
 
+    except FileNotFoundError:
+        return json.dumps({"error": f"Waveform file not found: {waveform_file}"})
+    except KeyError as e:
+        return json.dumps({"error": f"Signal not found: {e}"})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+def annotate_wavedrom_bug(
+    waveform_file: str,
+    clock_signal: str,
+    cycle_start: int,
+    cycle_end: int,
+    signals: list[str],
+    diagnosis: str,
+    context_cycles: int = 2,
+    background_color: str = "#ffffff",
+) -> str:
+    """Render an annotated WaveDrom SVG for a VCD bug report.
+
+    Args:
+        waveform_file: Path to the VCD file.
+        clock_signal: Clock signal used to map cycles to rising edges.
+        cycle_start: Zero-based inclusive first bug cycle.
+        cycle_end: Zero-based inclusive last bug cycle.
+        signals: Signal names to include in the rendered waveform.
+        diagnosis: Text label to place on the bug annotation.
+        context_cycles: Extra cycles to show before and after the bug range.
+        background_color: SVG background color, defaulting to white.
+
+    Returns:
+        JSON string with the result:
+        - On success: {"svg": "<svg...>", "wavejson": {...}, "cycle_start": <int>, "cycle_end": <int>}
+        - On error: {"error": "..."}
+    """
+    try:
+        result = render_wavedrom_bug_annotation(
+            waveform_file=waveform_file,
+            clock_signal=clock_signal,
+            cycle_start=cycle_start,
+            cycle_end=cycle_end,
+            signals=signals,
+            diagnosis=diagnosis,
+            context_cycles=context_cycles,
+            background_color=background_color,
+        )
+        return json.dumps(result)
     except FileNotFoundError:
         return json.dumps({"error": f"Waveform file not found: {waveform_file}"})
     except KeyError as e:
