@@ -55,7 +55,7 @@ describe("extension activation", () => {
       "rtlAutomation.waveformView",
       expect.anything()
     );
-    expect(registerCommand).toHaveBeenCalledTimes(3);
+    expect(registerCommand).toHaveBeenCalledTimes(4);
   });
 });
 

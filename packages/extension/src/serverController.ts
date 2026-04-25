@@ -6,10 +6,11 @@ import type {
   CountEventOccurrencesRequest,
   FindNthEventRequest,
   ListSignalsRequest,
+  ParseVerilogRequest,
+  ParseVerilogResult,
   ServerLaunchOptions,
   ServerStatus,
-  WaveformToolInfo,
-  WaveformToolName
+  WaveformToolInfo
 } from "@rtl-automation/shared";
 import type { Logger } from "./logging.js";
 
@@ -148,6 +149,13 @@ export class ServerController {
     return signalList;
   }
 
+  async parseVerilog(payload: ParseVerilogRequest): Promise<ParseVerilogResult> {
+    const result = await this.callTool("parse_verilog", {
+      verilog_file: payload.verilogFile
+    });
+    return result as unknown as ParseVerilogResult;
+  }
+
   async stop(): Promise<void> {
     if (!this.transport) {
       this.status = "stopped";
@@ -169,7 +177,7 @@ export class ServerController {
   }
 
   private async callTool(
-    toolName: WaveformToolName,
+    toolName: string,
     args: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
     await this.ensureStarted();
@@ -204,7 +212,7 @@ export class ServerController {
   }
 
   private parseToolPayload(
-    toolName: WaveformToolName,
+    toolName: string,
     payload: unknown
   ): Record<string, unknown> {
     const parsed = this.coerceRecord(payload);

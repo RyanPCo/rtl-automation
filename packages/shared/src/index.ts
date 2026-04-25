@@ -5,7 +5,8 @@ export const SIDEBAR_VIEW_ID = "rtlAutomation.waveformView";
 export const COMMAND_IDS = {
   openWaveformView: "rtlautomation.openWaveformView",
   startMcpServer: "rtlautomation.startMcpServer",
-  showServerStatus: "rtlautomation.showServerStatus"
+  showServerStatus: "rtlautomation.showServerStatus",
+  openBlockDiagram: "rtlautomation.openBlockDiagram"
 } as const;
 
 export const CONFIG_KEYS = {
@@ -28,7 +29,81 @@ export type WaveformToolName =
   | "list_signals"
   | "find_nth_event"
   | "count_event_occurrences"
-  | "annotate_wavedrom_bug";
+  | "parse_verilog";
+
+export interface VerilogPort {
+  name: string;
+  direction: "input" | "output" | "inout";
+  width: string;
+  line: number;
+}
+
+export interface VerilogNet {
+  name: string;
+  kind: "wire" | "reg";
+  width: string;
+  line: number;
+}
+
+export interface VerilogConnection {
+  port: string;
+  net: string;
+  net_idents: string[];
+  direction: "input" | "output" | "inout" | "unknown";
+}
+
+export interface VerilogInstance {
+  module_type: string;
+  instance_name: string;
+  line: number;
+  connections: VerilogConnection[];
+}
+
+export interface VerilogModuleInfo {
+  name: string;
+  line: number;
+  ports: VerilogPort[];
+}
+
+export interface VerilogHierarchyNode {
+  id: string;
+  moduleName: string;
+  instanceName?: string;
+  definitionFile?: string;
+  definitionLine?: number;
+  instanceFile: string;
+  instanceLine: number;
+  ports: VerilogPort[];
+  children: VerilogHierarchyNode[];
+  unresolved?: boolean;
+}
+
+export interface VerilogAssign {
+  lhs: string;
+  rhs_idents: string[];
+  line: number;
+}
+
+export interface VerilogProcedural {
+  kind: string;
+  reads: string[];
+  writes: string[];
+  line: number;
+}
+
+export interface ParseVerilogResult {
+  file: string;
+  module: VerilogModuleInfo;
+  nets: VerilogNet[];
+  instances: VerilogInstance[];
+  assigns: VerilogAssign[];
+  procedurals: VerilogProcedural[];
+  hierarchy?: VerilogHierarchyNode;
+}
+
+export interface ParseVerilogRequest {
+  verilogFile: string;
+}
 
 export interface WaveformEventSpec {
   type: string;
@@ -51,17 +126,6 @@ export interface FindNthEventRequest extends WaveformToolBaseRequest {
 }
 
 export type CountEventOccurrencesRequest = WaveformToolBaseRequest;
-
-export interface AnnotateWavedromBugRequest {
-  waveformFile: string;
-  clockSignal: string;
-  cycleStart: number;
-  cycleEnd: number;
-  signals: string[];
-  diagnosis: string;
-  contextCycles?: number;
-  backgroundColor?: string;
-}
 
 export interface WaveformToolInfo {
   name: WaveformToolName | string;
@@ -139,4 +203,19 @@ export type WebviewExtensionMessage =
   | {
       type: "session-summary";
       payload: WaveformSessionSummary;
+    }
+  | {
+      type: "diagram-data";
+      payload: ParseVerilogResult;
+    }
+  | {
+      type: "diagram-error";
+      payload: { message: string };
+    };
+
+export type BlockDiagramWebviewMessage =
+  | { type: "ready" }
+  | {
+      type: "navigate-to-line";
+      payload: { file: string; line: number };
     };

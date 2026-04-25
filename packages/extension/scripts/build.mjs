@@ -2,7 +2,7 @@ import { context } from "esbuild";
 
 const watch = process.argv.includes("--watch");
 
-const ctx = await context({
+const extensionCtx = await context({
   entryPoints: ["src/extension.ts"],
   bundle: true,
   platform: "node",
@@ -13,11 +13,23 @@ const ctx = await context({
   external: ["vscode"]
 });
 
-if (watch) {
-  await ctx.watch();
-  console.log("watching extension");
-} else {
-  await ctx.rebuild();
-  await ctx.dispose();
-}
+const webviewCtx = await context({
+  entryPoints: ["src/webview/blockDiagramEntry.tsx"],
+  bundle: true,
+  platform: "browser",
+  target: "es2020",
+  format: "iife",
+  sourcemap: true,
+  outfile: "dist/blockDiagramWebview.js",
+  jsx: "automatic",
+  loader: { ".css": "css" },
+  define: { "process.env.NODE_ENV": '"production"' }
+});
 
+if (watch) {
+  await Promise.all([extensionCtx.watch(), webviewCtx.watch()]);
+  console.log("watching extension + webview");
+} else {
+  await Promise.all([extensionCtx.rebuild(), webviewCtx.rebuild()]);
+  await Promise.all([extensionCtx.dispose(), webviewCtx.dispose()]);
+}
