@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "waveform": {
+      "command": "/Users/ryan/Code/rtl-automation/.venv/bin/python",
+      "args": ["-m", "waveform_mcp.server"],
+      "cwd": "/Users/ryan/Code/rtl-automation/waveform_mcp"
+    }
+  }
+}
