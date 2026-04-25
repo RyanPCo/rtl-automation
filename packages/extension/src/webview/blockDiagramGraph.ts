@@ -5,6 +5,7 @@ import type {
   VerilogHierarchyNode,
   VerilogPort
 } from "@rtl-automation/shared";
+import type { FlowTraceResult } from "./signalFlow.js";
 
 export interface DiagramNodeData {
   moduleName: string;
@@ -18,11 +19,14 @@ export interface DiagramNodeData {
   inoutPorts: VerilogPort[];
   unresolved?: boolean;
   selected?: boolean;
+  flowActive?: boolean;
+  flowSource?: boolean;
   isTop?: boolean;
   [key: string]: unknown;
 }
 
 export interface DiagramEdgeData {
+  flowActive?: boolean;
   [key: string]: unknown;
 }
 
@@ -79,7 +83,8 @@ function addTreeNodes(
   nextLeaf: { value: number },
   nodes: Node<DiagramNodeData>[],
   edges: Edge<DiagramEdgeData>[],
-  selectedNodeId?: string
+  selectedNodeId?: string,
+  flowTrace?: FlowTraceResult | null
 ): number {
   const children = visibleChildren(node);
   let y: number;
@@ -88,7 +93,7 @@ function addTreeNodes(
     nextLeaf.value += 1;
   } else {
     const childYs = children.map((child) =>
-      addTreeNodes(child, depth + 1, nextLeaf, nodes, edges, selectedNodeId)
+      addTreeNodes(child, depth + 1, nextLeaf, nodes, edges, selectedNodeId, flowTrace)
     );
     y = (childYs[0] + childYs[childYs.length - 1]) / 2;
   }
@@ -105,6 +110,8 @@ function addTreeNodes(
       instanceLine: node.instanceLine,
       unresolved: node.unresolved,
       selected: node.id === selectedNodeId,
+      flowActive: flowTrace?.nodeIds.has(node.id) ?? false,
+      flowSource: flowTrace?.selected.nodeId === node.id,
       isTop: depth === 0,
       ...splitPorts(node.ports)
     },
@@ -118,9 +125,14 @@ function addTreeNodes(
       id: `e-${node.id}->${child.id}`,
       source: node.id,
       target: child.id,
+      data: {
+        flowActive: flowTrace?.edgeIds.has(`e-${node.id}->${child.id}`) ?? false
+      },
       style: {
-        stroke: "var(--vscode-charts-blue, #4ea1ff)",
-        strokeWidth: 1.8
+        stroke: flowTrace?.edgeIds.has(`e-${node.id}->${child.id}`)
+          ? "var(--vscode-charts-yellow, #cca700)"
+          : "var(--vscode-charts-blue, #4ea1ff)",
+        strokeWidth: flowTrace?.edgeIds.has(`e-${node.id}->${child.id}`) ? 3 : 1.8
       }
     });
   });
@@ -146,7 +158,8 @@ export function findHierarchyNode(
 
 export function buildGraph(
   data: ParseVerilogResult,
-  selectedNodeId?: string
+  selectedNodeId?: string,
+  flowTrace?: FlowTraceResult | null
 ): {
   nodes: Node<DiagramNodeData>[];
   edges: Edge<DiagramEdgeData>[];
@@ -163,7 +176,8 @@ export function buildGraph(
     nextLeaf,
     nodes,
     edges,
-    selectedNodeId ?? hierarchy.id
+    selectedNodeId ?? hierarchy.id,
+    flowTrace
   );
 
   const minY = ((leaves - 1) * ROW_Y) / -2;
