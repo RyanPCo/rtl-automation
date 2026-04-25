@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ParseVerilogResult } from "@rtl-automation/shared";
 import { buildGraph } from "../src/webview/blockDiagramGraph.js";
+import { tracePortFlow } from "../src/webview/signalFlow.js";
 
 const treeData: ParseVerilogResult = {
   file: "/repo/src/top.v",
@@ -27,6 +28,19 @@ const treeData: ParseVerilogResult = {
       { name: "clk", direction: "input", width: "1", line: 2 },
       { name: "result", direction: "output", width: "[7:0]", line: 3 }
     ],
+    instances: [
+      {
+        module_type: "mid",
+        instance_name: "u_mid",
+        line: 7,
+        connections: [
+          { port: "clk", net: "clk", net_idents: ["clk"], direction: "input" },
+          { port: "done", net: "result", net_idents: ["result"], direction: "output" }
+        ]
+      }
+    ],
+    assigns: [],
+    procedurals: [],
     children: [
       {
         id: "top/u_mid",
@@ -40,6 +54,22 @@ const treeData: ParseVerilogResult = {
           { name: "clk", direction: "input", width: "1", line: 2 },
           { name: "done", direction: "output", width: "1", line: 3 }
         ],
+        connections: [
+          { port: "clk", net: "clk", net_idents: ["clk"], direction: "input" },
+          { port: "done", net: "result", net_idents: ["result"], direction: "output" }
+        ],
+        instances: [
+          {
+            module_type: "leaf",
+            instance_name: "u_leaf",
+            line: 9,
+            connections: [
+              { port: "din", net: "clk", net_idents: ["clk"], direction: "input" }
+            ]
+          }
+        ],
+        assigns: [],
+        procedurals: [],
         children: [
           {
             id: "top/u_mid/u_leaf",
@@ -50,6 +80,12 @@ const treeData: ParseVerilogResult = {
             instanceFile: "/repo/src/mid.v",
             instanceLine: 9,
             ports: [{ name: "din", direction: "input", width: "[7:0]", line: 2 }],
+            connections: [
+              { port: "din", net: "clk", net_idents: ["clk"], direction: "input" }
+            ],
+            instances: [],
+            assigns: [],
+            procedurals: [],
             children: []
           }
         ]
@@ -61,6 +97,10 @@ const treeData: ParseVerilogResult = {
         instanceFile: "/repo/src/top.v",
         instanceLine: 11,
         ports: [],
+        connections: [],
+        instances: [],
+        assigns: [],
+        procedurals: [],
         children: [],
         unresolved: true
       }
@@ -150,5 +190,19 @@ describe("buildGraph", () => {
     expect(node?.data.selected).toBe(true);
     expect(node?.data.inputPorts.map((port) => port.name)).toEqual(["clk"]);
     expect(node?.data.outputPorts.map((port) => port.name)).toEqual(["done"]);
+  });
+
+  it("marks nodes and edges from an active flow trace", () => {
+    const flow = tracePortFlow(treeData.hierarchy, {
+      nodeId: "top",
+      portName: "clk",
+      direction: "input"
+    });
+    const graph = buildGraph(treeData, "top", flow);
+
+    expect(graph.nodes.find((node) => node.id === "top")?.data.flowSource).toBe(true);
+    expect(graph.nodes.find((node) => node.id === "top/u_mid")?.data.flowActive).toBe(true);
+    expect(graph.nodes.find((node) => node.id === "top/u_mid/u_leaf")?.data.flowActive).toBe(true);
+    expect(graph.edges.find((edge) => edge.id === "e-top->top/u_mid")?.data?.flowActive).toBe(true);
   });
 });

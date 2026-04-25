@@ -14,6 +14,11 @@ import {
   defaultSelectedNodeId,
   type DiagramNodeData
 } from "./blockDiagramGraph.js";
+import {
+  tracePortFlow,
+  type FlowTraceResult,
+  type SelectedPortFlow
+} from "./signalFlow.js";
 
 interface VsCodeApi {
   postMessage(message: unknown): void;
@@ -66,7 +71,19 @@ function widthLabel(width: string): string {
   return width && width !== "1" ? width : "1";
 }
 
-function PortList({ title, ports }: { title: string; ports: VerilogPort[] }) {
+function PortList({
+  title,
+  ports,
+  selectedNodeId,
+  activeFlow,
+  onPortClick
+}: {
+  title: string;
+  ports: VerilogPort[];
+  selectedNodeId: string | null;
+  activeFlow: SelectedPortFlow | null;
+  onPortClick(port: VerilogPort): void;
+}) {
   return (
     <section style={{ minWidth: 220, flex: "1 1 260px" }}>
       <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.72, textTransform: "uppercase" }}>
@@ -75,21 +92,28 @@ function PortList({ title, ports }: { title: string; ports: VerilogPort[] }) {
       {ports.length ? (
         <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
           {ports.map((port) => (
-            <div
+            <button
               key={`${port.direction}-${port.name}`}
+              type="button"
+              onClick={() => onPortClick(port)}
               style={{
                 display: "flex",
                 gap: 6,
                 alignItems: "baseline",
                 padding: "5px 8px",
-                border: "1px solid var(--vscode-panel-border, #3c3c3c)",
+                border: activeFlow?.nodeId === selectedNodeId && activeFlow.portName === port.name
+                  ? "1px solid var(--vscode-charts-yellow, #cca700)"
+                  : "1px solid var(--vscode-panel-border, #3c3c3c)",
                 borderRadius: 4,
-                background: "var(--vscode-editor-background, #1e1e1e)"
+                background: "var(--vscode-editor-background, #1e1e1e)",
+                color: "var(--vscode-foreground, #ddd)",
+                font: "inherit",
+                cursor: "pointer"
               }}
             >
               <span style={{ fontWeight: 600 }}>{port.name}</span>
               <span style={{ opacity: 0.64 }}>{widthLabel(port.width)}</span>
-            </div>
+            </button>
           ))}
         </div>
       ) : (
@@ -99,7 +123,50 @@ function PortList({ title, ports }: { title: string; ports: VerilogPort[] }) {
   );
 }
 
-function Inspector({ selected }: { selected: DiagramNodeData | null }) {
+function FlowSummary({ trace }: { trace: FlowTraceResult | null }) {
+  if (!trace) return null;
+  const steps = trace.steps.slice(1, 8);
+  return (
+    <section style={{ flex: "1 1 320px", minWidth: 260 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.72, textTransform: "uppercase" }}>
+        Flow
+      </div>
+      <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {steps.length ? steps.map((step, index) => (
+          <div
+            key={`${step.nodeId}-${step.portName}-${index}`}
+            style={{
+              padding: "5px 8px",
+              border: "1px solid var(--vscode-charts-yellow, #cca700)",
+              borderRadius: 4,
+              background: "var(--vscode-editor-background, #1e1e1e)"
+            }}
+          >
+            <span style={{ fontWeight: 650 }}>{step.moduleLabel}</span>
+            <span style={{ opacity: 0.7 }}> · {step.portName}</span>
+            <span style={{ opacity: 0.55 }}> via {step.via}</span>
+          </div>
+        )) : (
+          <div style={{ opacity: 0.58 }}>No connected module pins found.</div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Inspector({
+  selected,
+  selectedNodeId,
+  activeFlow,
+  flowTrace,
+  onPortClick
+}: {
+  selected: DiagramNodeData | null;
+  selectedNodeId: string | null;
+  activeFlow: SelectedPortFlow | null;
+  flowTrace: FlowTraceResult | null;
+  onPortClick(port: VerilogPort): void;
+}) {
   if (!selected) {
     return (
       <footer style={inspectorStyle}>
@@ -128,9 +195,30 @@ function Inspector({ selected }: { selected: DiagramNodeData | null }) {
           </div>
         ) : null}
       </div>
-      <PortList title="Inputs" ports={selected.inputPorts} />
-      <PortList title="Outputs" ports={selected.outputPorts} />
-      {selected.inoutPorts.length ? <PortList title="Inout" ports={selected.inoutPorts} /> : null}
+      <PortList
+        title="Inputs"
+        ports={selected.inputPorts}
+        selectedNodeId={selectedNodeId}
+        activeFlow={activeFlow}
+        onPortClick={onPortClick}
+      />
+      <PortList
+        title="Outputs"
+        ports={selected.outputPorts}
+        selectedNodeId={selectedNodeId}
+        activeFlow={activeFlow}
+        onPortClick={onPortClick}
+      />
+      {selected.inoutPorts.length ? (
+        <PortList
+          title="Inout"
+          ports={selected.inoutPorts}
+          selectedNodeId={selectedNodeId}
+          activeFlow={activeFlow}
+          onPortClick={onPortClick}
+        />
+      ) : null}
+      <FlowSummary trace={flowTrace} />
     </footer>
   );
 }
@@ -154,6 +242,7 @@ export function BlockDiagramApp() {
   const [data, setData] = useState<ParseVerilogResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [activeFlow, setActiveFlow] = useState<SelectedPortFlow | null>(null);
 
   useEffect(() => {
     const handler = (event: MessageEvent): void => {
@@ -163,11 +252,13 @@ export function BlockDiagramApp() {
         const payload = msg.payload as ParseVerilogResult;
         setData(payload);
         setSelectedNodeId(defaultSelectedNodeId(payload));
+        setActiveFlow(null);
         setError(null);
       } else if (msg.type === "diagram-error") {
         setError(msg.payload?.message ?? "Unknown error");
         setData(null);
         setSelectedNodeId(null);
+        setActiveFlow(null);
       }
     };
     window.addEventListener("message", handler);
@@ -175,9 +266,13 @@ export function BlockDiagramApp() {
     return () => window.removeEventListener("message", handler);
   }, []);
 
+  const flowTrace = useMemo(
+    () => tracePortFlow(data?.hierarchy, activeFlow),
+    [data, activeFlow]
+  );
   const graph = useMemo(
-    () => (data ? buildGraph(data, selectedNodeId ?? undefined) : null),
-    [data, selectedNodeId]
+    () => (data ? buildGraph(data, selectedNodeId ?? undefined, flowTrace) : null),
+    [data, selectedNodeId, flowTrace]
   );
   const selectedNode = useMemo(() => {
     if (!graph || !selectedNodeId) return null;
@@ -199,6 +294,7 @@ export function BlockDiagramApp() {
           onNodeClick={(event: React.MouseEvent, node: Node) => {
             const nd = node.data as DiagramNodeData;
             setSelectedNodeId(node.id);
+            setActiveFlow(null);
             if (
               (event.ctrlKey || event.metaKey) &&
               !nd.unresolved &&
@@ -216,7 +312,24 @@ export function BlockDiagramApp() {
           <Controls />
         </ReactFlow>
       </div>
-      <Inspector selected={selectedNode} />
+      <Inspector
+        selected={selectedNode}
+        selectedNodeId={selectedNodeId}
+        activeFlow={activeFlow}
+        flowTrace={flowTrace}
+        onPortClick={(port) => {
+          if (!selectedNodeId) return;
+          setActiveFlow((current) =>
+            current?.nodeId === selectedNodeId && current.portName === port.name
+              ? null
+              : {
+                  nodeId: selectedNodeId,
+                  portName: port.name,
+                  direction: port.direction
+                }
+          );
+        }}
+      />
     </div>
   );
 }

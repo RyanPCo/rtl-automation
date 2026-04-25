@@ -29,8 +29,16 @@ export function ModuleNode({ data }: { data: DiagramNodeData }) {
         opacity: data.unresolved ? 0.62 : 1,
         borderColor: data.selected
           ? "var(--vscode-focusBorder, #007fd4)"
+          : data.flowSource
+            ? "var(--vscode-charts-yellow, #cca700)"
+            : data.flowActive
+              ? "var(--vscode-charts-green, #73c991)"
           : "var(--vscode-panel-border, #565656)",
-        outline: data.selected ? "1px solid var(--vscode-focusBorder, #007fd4)" : "none"
+        outline: data.selected
+          ? "1px solid var(--vscode-focusBorder, #007fd4)"
+          : data.flowActive
+            ? "1px solid currentColor"
+            : "none"
       }}
     >
       <Handle type="target" position={Position.Left} />

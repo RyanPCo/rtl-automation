@@ -575,6 +575,7 @@ def _build_hierarchy(
     instance_file: str,
     node_id: str,
     stack: set[tuple[str, str]],
+    connections: Optional[list[dict]] = None,
 ) -> dict:
     """Build a recursive module hierarchy rooted at an already-parsed module."""
     module_name = parsed["module"]["name"]
@@ -589,6 +590,10 @@ def _build_hierarchy(
         "instanceFile": instance_file,
         "instanceLine": instance_line,
         "ports": parsed["module"]["ports"],
+        "connections": connections or [],
+        "instances": parsed["instances"],
+        "assigns": parsed["assigns"],
+        "procedurals": parsed["procedurals"],
         "children": [],
     }
     if instance_name is not None:
@@ -613,6 +618,10 @@ def _build_hierarchy(
                 "instanceFile": definition_file,
                 "instanceLine": inst["line"],
                 "ports": _ports_from_connections(inst),
+                "connections": inst["connections"],
+                "instances": [],
+                "assigns": [],
+                "procedurals": [],
                 "children": [],
                 "unresolved": True,
             })
@@ -628,6 +637,10 @@ def _build_hierarchy(
                 "instanceFile": definition_file,
                 "instanceLine": inst["line"],
                 "ports": _ports_from_connections(inst),
+                "connections": inst["connections"],
+                "instances": [],
+                "assigns": [],
+                "procedurals": [],
                 "children": [],
                 "unresolved": True,
             })
@@ -640,6 +653,7 @@ def _build_hierarchy(
             definition_file,
             child_id,
             next_stack,
+            inst["connections"],
         ))
 
     return node
@@ -655,5 +669,6 @@ def parse_verilog(filepath: str) -> dict:
         parsed["file"],
         "top",
         set(),
+        [],
     )
     return parsed

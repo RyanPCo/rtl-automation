@@ -341,6 +341,8 @@ endmodule
     assert mid["moduleName"] == "mid"
     assert mid["instanceName"] == "u_mid"
     assert mid["definitionFile"].endswith("mid.v")
+    assert {c["port"]: c["net"] for c in mid["connections"]} == {"clk": "clk", "done": "done"}
+    assert [i["instance_name"] for i in mid["instances"]] == ["u_leaf"]
     leaf = mid["children"][0]
     assert leaf["moduleName"] == "leaf"
     assert leaf["instanceName"] == "u_leaf"
