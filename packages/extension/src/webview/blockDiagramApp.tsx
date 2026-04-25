@@ -159,24 +159,32 @@ function Inspector({
   selectedNodeId,
   activeFlow,
   flowTrace,
-  onPortClick
+  onPortClick,
+  height
 }: {
   selected: DiagramNodeData | null;
   selectedNodeId: string | null;
   activeFlow: SelectedPortFlow | null;
   flowTrace: FlowTraceResult | null;
   onPortClick(port: VerilogPort): void;
+  height: number;
 }) {
+  const style = {
+    ...inspectorStyle,
+    minHeight: height,
+    flex: `0 0 ${height}px`
+  };
+
   if (!selected) {
     return (
-      <footer style={inspectorStyle}>
+      <footer style={style}>
         <div style={{ opacity: 0.65 }}>Select a module to inspect its ports.</div>
       </footer>
     );
   }
 
   return (
-    <footer style={inspectorStyle}>
+    <footer style={style}>
       <div style={{ flex: "0 0 190px" }}>
         <div style={{ fontSize: 15, fontWeight: 750 }}>
           {selected.instanceName ?? selected.moduleName}
@@ -224,8 +232,6 @@ function Inspector({
 }
 
 const inspectorStyle = {
-  minHeight: 150,
-  flex: "0 0 150px",
   padding: "14px 18px",
   borderTop: "1px solid var(--vscode-panel-border, #3c3c3c)",
   background: "var(--vscode-sideBar-background, #252526)",
@@ -238,11 +244,16 @@ const inspectorStyle = {
   overflow: "auto"
 } as const;
 
+const MIN_PANEL_HEIGHT = 96;
+const DEFAULT_PANEL_HEIGHT = 150;
+const MAX_PANEL_HEIGHT = 420;
+
 export function BlockDiagramApp() {
   const [data, setData] = useState<ParseVerilogResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeFlow, setActiveFlow] = useState<SelectedPortFlow | null>(null);
+  const [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT);
 
   useEffect(() => {
     const handler = (event: MessageEvent): void => {
@@ -312,11 +323,35 @@ export function BlockDiagramApp() {
           <Controls />
         </ReactFlow>
       </div>
+      <div
+        onPointerDown={(event) => {
+          event.preventDefault();
+          const startY = event.clientY;
+          const startHeight = panelHeight;
+          const onMove = (moveEvent: PointerEvent) => {
+            const nextHeight = startHeight - (moveEvent.clientY - startY);
+            setPanelHeight(Math.max(MIN_PANEL_HEIGHT, Math.min(MAX_PANEL_HEIGHT, nextHeight)));
+          };
+          const onUp = () => {
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+          };
+          window.addEventListener("pointermove", onMove);
+          window.addEventListener("pointerup", onUp);
+        }}
+        style={{
+          flex: "0 0 6px",
+          cursor: "ns-resize",
+          borderTop: "1px solid var(--vscode-panel-border, #3c3c3c)",
+          background: "var(--vscode-sideBar-background, #252526)"
+        }}
+      />
       <Inspector
         selected={selectedNode}
         selectedNodeId={selectedNodeId}
         activeFlow={activeFlow}
         flowTrace={flowTrace}
+        height={panelHeight}
         onPortClick={(port) => {
           if (!selectedNodeId) return;
           setActiveFlow((current) =>
