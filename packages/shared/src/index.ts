@@ -74,6 +74,7 @@ export interface VerilogHierarchyNode {
   instanceFile: string;
   instanceLine: number;
   ports: VerilogPort[];
+  nets?: VerilogNet[];
   connections?: VerilogConnection[];
   instances?: VerilogInstance[];
   assigns?: VerilogAssign[];

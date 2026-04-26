@@ -3,6 +3,7 @@ import { Position, type Edge, type Node } from "@xyflow/react";
 import type {
   ParseVerilogResult,
   VerilogHierarchyNode,
+  VerilogNet,
   VerilogPort
 } from "@rtl-automation/shared";
 import type { FlowTraceResult } from "./signalFlow.js";
@@ -17,6 +18,7 @@ export interface DiagramNodeData {
   inputPorts: VerilogPort[];
   outputPorts: VerilogPort[];
   inoutPorts: VerilogPort[];
+  internalSignals: VerilogNet[];
   unresolved?: boolean;
   selected?: boolean;
   flowActive?: boolean;
@@ -43,6 +45,7 @@ function fallbackHierarchy(data: ParseVerilogResult): VerilogHierarchyNode {
     instanceFile: data.file,
     instanceLine: data.module.line,
     ports: data.module.ports,
+    nets: data.nets,
     children: data.instances.map((inst) => ({
       id: `top/${inst.instance_name}`,
       moduleName: inst.module_type,
@@ -50,6 +53,7 @@ function fallbackHierarchy(data: ParseVerilogResult): VerilogHierarchyNode {
       instanceFile: data.file,
       instanceLine: inst.line,
       ports: [],
+      nets: [],
       children: [],
       unresolved: true
     }))
@@ -113,6 +117,7 @@ function addTreeNodes(
       flowActive: flowTrace?.nodeIds.has(node.id) ?? false,
       flowSource: flowTrace?.selected.nodeId === node.id,
       isTop: depth === 0,
+      internalSignals: node.nets ?? [],
       ...splitPorts(node.ports)
     },
     position: { x: depth * DEPTH_X, y },

@@ -324,6 +324,7 @@ endmodule
 """)
     _write(tmp_path, "mid.v", """\
 module mid (input clk, output done);
+    wire local_signal;
     leaf u_leaf (.din(clk), .dout(done));
 endmodule
 """)
@@ -343,6 +344,7 @@ endmodule
     assert mid["definitionFile"].endswith("mid.v")
     assert {c["port"]: c["net"] for c in mid["connections"]} == {"clk": "clk", "done": "done"}
     assert [i["instance_name"] for i in mid["instances"]] == ["u_leaf"]
+    assert [n["name"] for n in mid["nets"]] == ["local_signal"]
     leaf = mid["children"][0]
     assert leaf["moduleName"] == "leaf"
     assert leaf["instanceName"] == "u_leaf"

@@ -28,6 +28,7 @@ const treeData: ParseVerilogResult = {
       { name: "clk", direction: "input", width: "1", line: 2 },
       { name: "result", direction: "output", width: "[7:0]", line: 3 }
     ],
+    nets: [{ name: "top_mid", kind: "wire", width: "1", line: 5 }],
     instances: [
       {
         module_type: "mid",
@@ -54,6 +55,7 @@ const treeData: ParseVerilogResult = {
           { name: "clk", direction: "input", width: "1", line: 2 },
           { name: "done", direction: "output", width: "1", line: 3 }
         ],
+        nets: [{ name: "local_mid", kind: "wire", width: "1", line: 4 }],
         connections: [
           { port: "clk", net: "clk", net_idents: ["clk"], direction: "input" },
           { port: "done", net: "result", net_idents: ["result"], direction: "output" }
@@ -80,6 +82,7 @@ const treeData: ParseVerilogResult = {
             instanceFile: "/repo/src/mid.v",
             instanceLine: 9,
             ports: [{ name: "din", direction: "input", width: "[7:0]", line: 2 }],
+            nets: [],
             connections: [
               { port: "din", net: "clk", net_idents: ["clk"], direction: "input" }
             ],
@@ -190,6 +193,7 @@ describe("buildGraph", () => {
     expect(node?.data.selected).toBe(true);
     expect(node?.data.inputPorts.map((port) => port.name)).toEqual(["clk"]);
     expect(node?.data.outputPorts.map((port) => port.name)).toEqual(["done"]);
+    expect(node?.data.internalSignals.map((signal) => signal.name)).toEqual(["local_mid"]);
   });
 
   it("marks nodes and edges from an active flow trace", () => {
