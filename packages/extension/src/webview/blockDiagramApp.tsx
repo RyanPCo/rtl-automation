@@ -7,7 +7,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import type { ParseVerilogResult, VerilogPort } from "@rtl-automation/shared";
+import type { ParseVerilogResult, VerilogNet, VerilogPort } from "@rtl-automation/shared";
 import { ModuleNode } from "./InstanceNode.js";
 import {
   buildGraph,
@@ -16,7 +16,6 @@ import {
 } from "./blockDiagramGraph.js";
 import {
   tracePortFlow,
-  type FlowTraceResult,
   type SelectedPortFlow
 } from "./signalFlow.js";
 
@@ -76,45 +75,76 @@ function PortList({
   ports,
   selectedNodeId,
   activeFlow,
-  onPortClick
+  onPortClick,
+  listMaxHeight
 }: {
   title: string;
   ports: VerilogPort[];
   selectedNodeId: string | null;
   activeFlow: SelectedPortFlow | null;
   onPortClick(port: VerilogPort): void;
+  listMaxHeight: number;
 }) {
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredPorts = normalizedQuery
+    ? ports.filter((port) => port.name.toLowerCase().includes(normalizedQuery))
+    : ports;
+
   return (
-    <section style={{ minWidth: 220, flex: "1 1 260px" }}>
+    <section style={{ minWidth: 180, flex: "1 1 210px" }}>
       <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.72, textTransform: "uppercase" }}>
         {title} ({ports.length})
       </div>
+      <input
+        type="text"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder={`Search ${title.toLowerCase()}`}
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          marginTop: 8,
+          padding: "5px 7px",
+          border: "1px solid var(--vscode-input-border, #3c3c3c)",
+          borderRadius: 3,
+          background: "var(--vscode-input-background, #1e1e1e)",
+          color: "var(--vscode-input-foreground, #ddd)",
+          font: "inherit"
+        }}
+      />
       {ports.length ? (
-        <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {ports.map((port) => (
+        <div style={{ marginTop: 8, display: "grid", gap: 4, overflowY: "auto", overflowX: "hidden", maxHeight: listMaxHeight }}>
+          {filteredPorts.map((port) => (
             <button
               key={`${port.direction}-${port.name}`}
               type="button"
               onClick={() => onPortClick(port)}
               style={{
                 display: "flex",
-                gap: 6,
+                justifyContent: "space-between",
+                gap: 12,
                 alignItems: "baseline",
-                padding: "5px 8px",
+                width: "100%",
+                padding: "5px 7px",
                 border: activeFlow?.nodeId === selectedNodeId && activeFlow.portName === port.name
                   ? "1px solid var(--vscode-charts-yellow, #cca700)"
-                  : "1px solid var(--vscode-panel-border, #3c3c3c)",
-                borderRadius: 4,
+                  : "1px solid transparent",
+                borderRadius: 3,
                 background: "var(--vscode-editor-background, #1e1e1e)",
                 color: "var(--vscode-foreground, #ddd)",
                 font: "inherit",
-                cursor: "pointer"
+                cursor: "pointer",
+                textAlign: "left"
               }}
             >
               <span style={{ fontWeight: 600 }}>{port.name}</span>
               <span style={{ opacity: 0.64 }}>{widthLabel(port.width)}</span>
             </button>
           ))}
+          {!filteredPorts.length ? (
+            <div style={{ opacity: 0.58, padding: "5px 0" }}>No matches</div>
+          ) : null}
         </div>
       ) : (
         <div style={{ marginTop: 8, opacity: 0.58 }}>None</div>
@@ -123,33 +153,61 @@ function PortList({
   );
 }
 
-function FlowSummary({ trace }: { trace: FlowTraceResult | null }) {
-  if (!trace) return null;
-  const steps = trace.steps.slice(1, 8);
+function SignalList({ signals, listMaxHeight }: { signals: VerilogNet[]; listMaxHeight: number }) {
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredSignals = normalizedQuery
+    ? signals.filter((signal) => signal.name.toLowerCase().includes(normalizedQuery))
+    : signals;
+
   return (
-    <section style={{ flex: "1 1 320px", minWidth: 260 }}>
+    <section style={{ minWidth: 190, flex: "1 1 220px" }}>
       <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.72, textTransform: "uppercase" }}>
-        Flow
+        Signals ({signals.length})
       </div>
-      <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {steps.length ? steps.map((step, index) => (
-          <div
-            key={`${step.nodeId}-${step.portName}-${index}`}
-            style={{
-              padding: "5px 8px",
-              border: "1px solid var(--vscode-charts-yellow, #cca700)",
-              borderRadius: 4,
-              background: "var(--vscode-editor-background, #1e1e1e)"
-            }}
-          >
-            <span style={{ fontWeight: 650 }}>{step.moduleLabel}</span>
-            <span style={{ opacity: 0.7 }}> · {step.portName}</span>
-            <span style={{ opacity: 0.55 }}> via {step.via}</span>
-          </div>
-        )) : (
-          <div style={{ opacity: 0.58 }}>No connected module pins found.</div>
-        )}
-      </div>
+      <input
+        type="text"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="Search signals"
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          marginTop: 8,
+          padding: "5px 7px",
+          border: "1px solid var(--vscode-input-border, #3c3c3c)",
+          borderRadius: 3,
+          background: "var(--vscode-input-background, #1e1e1e)",
+          color: "var(--vscode-input-foreground, #ddd)",
+          font: "inherit"
+        }}
+      />
+      {signals.length ? (
+        <div style={{ marginTop: 8, display: "grid", gap: 4, overflowY: "auto", overflowX: "hidden", maxHeight: listMaxHeight }}>
+          {filteredSignals.map((signal) => (
+            <div
+              key={`${signal.kind}-${signal.name}`}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "baseline",
+                padding: "5px 7px",
+                borderRadius: 3,
+                background: "var(--vscode-editor-background, #1e1e1e)"
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>{signal.name}</span>
+              <span style={{ opacity: 0.64 }}>{signal.kind} {widthLabel(signal.width)}</span>
+            </div>
+          ))}
+          {!filteredSignals.length ? (
+            <div style={{ opacity: 0.58, padding: "5px 0" }}>No matches</div>
+          ) : null}
+        </div>
+      ) : (
+        <div style={{ marginTop: 8, opacity: 0.58 }}>None</div>
+      )}
     </section>
   );
 }
@@ -158,14 +216,12 @@ function Inspector({
   selected,
   selectedNodeId,
   activeFlow,
-  flowTrace,
   onPortClick,
   height
 }: {
   selected: DiagramNodeData | null;
   selectedNodeId: string | null;
   activeFlow: SelectedPortFlow | null;
-  flowTrace: FlowTraceResult | null;
   onPortClick(port: VerilogPort): void;
   height: number;
 }) {
@@ -174,6 +230,7 @@ function Inspector({
     minHeight: height,
     flex: `0 0 ${height}px`
   };
+  const listMaxHeight = Math.max(48, height - 22);
 
   if (!selected) {
     return (
@@ -185,30 +242,13 @@ function Inspector({
 
   return (
     <footer style={style}>
-      <div style={{ flex: "0 0 190px" }}>
-        <div style={{ fontSize: 15, fontWeight: 750 }}>
-          {selected.instanceName ?? selected.moduleName}
-        </div>
-        <div style={{ marginTop: 4, opacity: 0.68 }}>
-          {selected.isTop ? "top module" : selected.moduleName}
-        </div>
-        {selected.unresolved ? (
-          <div
-            style={{
-              marginTop: 8,
-              color: "var(--vscode-descriptionForeground, #9d9d9d)"
-            }}
-          >
-            Definition not found.
-          </div>
-        ) : null}
-      </div>
       <PortList
         title="Inputs"
         ports={selected.inputPorts}
         selectedNodeId={selectedNodeId}
         activeFlow={activeFlow}
         onPortClick={onPortClick}
+        listMaxHeight={listMaxHeight}
       />
       <PortList
         title="Outputs"
@@ -216,6 +256,7 @@ function Inspector({
         selectedNodeId={selectedNodeId}
         activeFlow={activeFlow}
         onPortClick={onPortClick}
+        listMaxHeight={listMaxHeight}
       />
       {selected.inoutPorts.length ? (
         <PortList
@@ -224,9 +265,10 @@ function Inspector({
           selectedNodeId={selectedNodeId}
           activeFlow={activeFlow}
           onPortClick={onPortClick}
+          listMaxHeight={listMaxHeight}
         />
       ) : null}
-      <FlowSummary trace={flowTrace} />
+      <SignalList signals={selected.internalSignals} listMaxHeight={listMaxHeight} />
     </footer>
   );
 }
@@ -241,11 +283,13 @@ const inspectorStyle = {
   display: "flex",
   gap: 24,
   alignItems: "flex-start",
-  overflow: "auto"
+  overflowX: "auto",
+  overflowY: "hidden",
+  minHeight: 0
 } as const;
 
 const MIN_PANEL_HEIGHT = 96;
-const DEFAULT_PANEL_HEIGHT = 150;
+const DEFAULT_PANEL_HEIGHT = 220;
 const MAX_PANEL_HEIGHT = 420;
 
 export function BlockDiagramApp() {
@@ -350,7 +394,6 @@ export function BlockDiagramApp() {
         selected={selectedNode}
         selectedNodeId={selectedNodeId}
         activeFlow={activeFlow}
-        flowTrace={flowTrace}
         height={panelHeight}
         onPortClick={(port) => {
           if (!selectedNodeId) return;
